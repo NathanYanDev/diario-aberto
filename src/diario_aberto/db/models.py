@@ -37,14 +37,16 @@ class Edition(Base):
         TIMESTAMP(timezone=True), server_default=func.now()
     )
 
-    acts: Mapped[list[Acts]] = relationship(back_populates="edition", cascade="all, delete-orphan")
+    acts: Mapped[list[Acts]] = relationship(
+        back_populates="edition", cascade="all, delete-orphan"
+    )
 
 
 class Acts(Base):
     __tablename__ = "acts"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    edition_id: Mapped[int] = mapped_column(ForeignKey("edicoes.id"))
+    edition_id: Mapped[int] = mapped_column(ForeignKey("editions.id"))
     type: Mapped[str | None] = mapped_column(Text)
     act_number: Mapped[str | None] = mapped_column(Text)
     text: Mapped[str] = mapped_column(Text, nullable=False)
