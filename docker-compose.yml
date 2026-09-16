@@ -1,0 +1,15 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: diario
+      POSTGRES_PASSWORD: diario
+      POSTGRES_DB: diario_aberto
+    ports:
+      - "5432:5432"
+    volumes:
+      - diario_aberto_data:/var/lib/postgresql/data
+      - ./schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+
+volumes:
+  diario_aberto_data:
