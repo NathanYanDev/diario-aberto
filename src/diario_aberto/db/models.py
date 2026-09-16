@@ -10,57 +10,55 @@ class Base(DeclarativeBase):
     pass
 
 
-class StatusExtracao(enum.Enum):
-    pendente = "pendente"
+class ExtractionStatus(enum.Enum):
+    pending = "pending"
     ok = "ok"
-    parcial = "parcial_precisa_ocr"
-    erro = "erro"
+    parcial = "parcial_needs_ocr"
+    error = "error"
 
 
-class Edicao(Base):
-    __tablename__ = "edicoes"
+class Edition(Base):
+    __tablename__ = "editions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    numero: Mapped[int] = mapped_column(Integer, unique=True, nullable=False)
-    data_publicacao: Mapped[dt.date] = mapped_column(Date, nullable=False)
-    url_pdf: Mapped[str] = mapped_column(Text, nullable=False)
-    caminho_pdf: Mapped[str | None] = mapped_column(Text)
-    status_extracao: Mapped[StatusExtracao] = mapped_column(
+    number: Mapped[int] = mapped_column(Integer, unique=True, nullable=False)
+    publication_date: Mapped[dt.date] = mapped_column(Date, nullable=False)
+    pdf_url: Mapped[str] = mapped_column(Text, nullable=False)
+    pdf_path: Mapped[str | None] = mapped_column(Text)
+    extraction_status: Mapped[ExtractionStatus] = mapped_column(
         Enum(
-            StatusExtracao,
+            ExtractionStatus,
             name="status_extracao_enum",
             values_callable=lambda cls: [e.value for e in cls],
         ),
-        default=StatusExtracao.pendente,
+        default=ExtractionStatus.pending,
     )
-    coletado_em: Mapped[dt.datetime] = mapped_column(
+    collected_at: Mapped[dt.datetime] = mapped_column(
         TIMESTAMP(timezone=True), server_default=func.now()
     )
 
-    atos: Mapped[list[Ato]] = relationship(
-        back_populates="edicao", cascade="all, delete-orphan"
-    )
+    acts: Mapped[list[Acts]] = relationship(back_populates="edition", cascade="all, delete-orphan")
 
 
-class Ato(Base):
-    __tablename__ = "atos"
+class Acts(Base):
+    __tablename__ = "acts"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    edicao_id: Mapped[int] = mapped_column(ForeignKey("edicoes.id"))
-    tipo: Mapped[str | None] = mapped_column(Text)
-    numero_ato: Mapped[str | None] = mapped_column(Text)
-    texto: Mapped[str] = mapped_column(Text, nullable=False)
-    pagina: Mapped[int | None] = mapped_column(Integer)
+    edition_id: Mapped[int] = mapped_column(ForeignKey("edicoes.id"))
+    type: Mapped[str | None] = mapped_column(Text)
+    act_number: Mapped[str | None] = mapped_column(Text)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    page: Mapped[int | None] = mapped_column(Integer)
     embedding: Mapped[list[float] | None] = mapped_column(Vector(1536), nullable=False)
-    criado_em: Mapped[dt.datetime] = mapped_column(
+    created_at: Mapped[dt.datetime] = mapped_column(
         TIMESTAMP(timezone=True), server_default=func.now()
     )
-    edicao: Mapped[Edicao] = relationship(back_populates="atos")
+    edition: Mapped[Edition] = relationship(back_populates="acts")
 
     @property
-    def edicao_numero(self) -> int:
-        return self.edicao.numero
+    def edition_number(self) -> int:
+        return self.edition.number
 
     @property
-    def edicao_data(self) -> dt.date:
-        return self.edicao.data_publicacao
+    def edition_date(self) -> dt.date:
+        return self.edition.publication_date
