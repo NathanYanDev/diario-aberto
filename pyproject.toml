@@ -16,6 +16,8 @@ dependencies = [
     "pydantic>=2.7",
     "pydantic-settings>=2.3",
     "ruff>=0.16.7",
+    "httpx>=0.28.1",
+    "beautifulsoup4>=4.15.0",
 ]
 
 [project.optional-dependencies]
