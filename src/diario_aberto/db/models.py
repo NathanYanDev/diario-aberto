@@ -37,9 +37,7 @@ class Edition(Base):
         TIMESTAMP(timezone=True), server_default=func.now()
     )
 
-    acts: Mapped[list[Acts]] = relationship(
-        back_populates="edition", cascade="all, delete-orphan"
-    )
+    acts: Mapped[list[Acts]] = relationship(back_populates="edition", cascade="all, delete-orphan")
 
 
 class Acts(Base):
