@@ -2,7 +2,7 @@ import datetime as dt
 import logging
 import re
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import httpx
 from bs4 import BeautifulSoup, Tag
@@ -47,6 +47,7 @@ class ListedEdition:
     number: int
     publication_date: dt.date
     page_url: str
+    pdf_url: str | None = None
 
 
 class EditionScraper:
@@ -92,6 +93,53 @@ class EditionScraper:
             f"Coleta finalizada: {pages_visited} páginas, {len(editions)} edições."
         )
         return editions
+
+    def collect_pdf_urls(self, editions: list[ListedEdition]) -> list[ListedEdition]:
+        updated: list[ListedEdition] = []
+
+        for edition in editions:
+            try:
+                soup = self._fetch_soup(edition.page_url)
+            except (
+                httpx.TimeoutException,
+                httpx.ConnectError,
+                httpx.HTTPStatusError,
+            ) as error:
+                logger.warning(
+                    f"Falha ao acessar a página {edition.page_url} da edição {edition.number}: {error}"
+                )
+                updated.append(edition)
+                time.sleep(settings.scraper_delay_seconds)
+                continue
+
+            anchor = soup.select_one("a.botao.botao-pdf")
+
+            if anchor is None:
+                logger.warning(
+                    "Seletor do PDF não encontrado para a edição %d (%s)",
+                    edition.number,
+                    edition.page_url,
+                )
+                url = None
+            else:
+                url = self._parse_pdf_link(anchor)
+                if url is None:
+                    logger.warning(
+                        "Link do PDF vazio no seletor da edição %d (%s)",
+                        edition.number,
+                        edition.page_url,
+                    )
+
+            updated.append(replace(edition, pdf_url=url))
+            time.sleep(settings.scraper_delay_seconds)
+
+        sem_pdf = sum(1 for e in updated if e.pdf_url is None)
+        logger.info(
+            "Coleta de PDFs finalizada: %d edições, %d sem PDF encontrado",
+            len(updated),
+            sem_pdf,
+        )
+        return updated
 
     @staticmethod
     @retry(
@@ -186,3 +234,9 @@ class EditionScraper:
             return None
 
         return str(item.a.get("href")) if item.a.get("href") is not None else None
+
+    @staticmethod
+    def _parse_pdf_link(item: Tag) -> str | None:
+        link = item.get("href")
+
+        return str(link) if link is not None else None
