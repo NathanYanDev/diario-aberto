@@ -57,27 +57,25 @@ class EditionScraper:
 
         while url and pages_visited < MAX_PAGES:
             soup = self._fetch_soup(url)
-            current_page, last_page = self._get_current_and_last_page(soup) or tuple([0, 0])
+            current_page, last_page = self._get_current_and_last_page(soup) or (0, 0)
 
             remaining_pages = last_page - current_page
 
-            (
+            if current_page != 0:
                 logger.info("Iniciando coleta na página %d", current_page)
-                if current_page != 0
-                else logger.info("Iniciando coleta")
-            )
+            else:
+                logger.info("Iniciando coleta")
 
             editions.extend(self._parse_page(soup))
 
-            (
+            if current_page != 0:
                 logger.info(
                     "Edições coletadas da página %d com sucesso, faltam %d páginas",
                     current_page,
                     remaining_pages,
                 )
-                if current_page != 0
-                else logger.info("Edições coletadas com sucesso")
-            )
+            else:
+                logger.info("Edições coletadas com sucesso")
 
             pages_visited += 1
 
@@ -87,14 +85,11 @@ class EditionScraper:
 
         if pages_visited >= MAX_PAGES:
             logger.warning(
-                "Atingiu o limite de %d páginas - verifique se a paginação não entrou em loop",
-                MAX_PAGES,
+                f"Atingiu o limite de {MAX_PAGES} páginas - verifique se a paginação não entrou em loop"
             )
 
         logger.info(
-            "Coleta finalizada: %d páginas, %d edições.",
-            pages_visited,
-            len(editions),
+            f"Coleta finalizada: {pages_visited} páginas, {len(editions)} edições."
         )
         return editions
 
@@ -125,11 +120,7 @@ class EditionScraper:
 
             if number is None or publication_date is None or page_url is None:
                 logger.warning(
-                    "Falha ao parsear item: number=%r date=%r url=%r html=%r",
-                    number,
-                    publication_date,
-                    page_url,
-                    item.get_text(strip=True)[:80],
+                    f"Falha ao parsear item: number = {number} date = {publication_date} url = {page_url} html = {item.get_text(strip=True)[:80]}",
                 )
                 continue
 
